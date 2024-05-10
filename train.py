@@ -126,7 +126,7 @@ def main():
     # 用于判断最佳模型
     best_acc = 0.0
     # 最佳模型的保存地址
-    save_path = '.googleNet.pth'
+    save_path = 'googleNet.pth'
     train_steps = len(train_loader)
     for epoch in range(epochs):
         # 训练

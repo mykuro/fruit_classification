@@ -44,7 +44,7 @@ def predict(img_path):
     # 实例化模型时不需要辅助分类器
     model = GoogLeNet(num_classes=5, aux_logits=False).to(device)
     # 载入模型权重
-    weights_path = "./.googleNet.pth"
+    weights_path = "./googleNet.pth"
     # 确定模型存在，否则反馈错误
     assert os.path.exists(weights_path), "file: '{}' does not exist.".format(
         weights_path)
