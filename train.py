@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import openpyxl.worksheet
 import torch
 import torch.nn as nn
 import torch.utils
@@ -9,6 +10,8 @@ from torchvision import transforms, datasets
 import torch.optim as optim
 from tqdm import tqdm
 from model import GoogLeNet
+import openpyxl
+from openpyxl.chart import LineChart, Reference
 
 
 # 加载数据集并训练，计算loss和accuracy，保存训练好的网络参数
@@ -25,7 +28,7 @@ def main():
             # RandomResizedCrop(224)：将给定图像随机裁剪为不同大小和宽高比，然后缩放裁剪所得到的图像为给定大小
             transforms.RandomResizedCrop(224),
             # RandomVerticalFlip()：以0.5的概率竖直翻转给定的PIL图像
-            # transforms.RandomVerticalFlip(),
+            transforms.RandomVerticalFlip(),
             # RandomHorizontalFlip()：以0.5的概率水平翻转给定的PIL图像
             transforms.RandomHorizontalFlip(),
             # ToTensor()：数据转化为Tensor格式
@@ -118,16 +121,29 @@ def main():
 
     # 定义adam优化器
     # params(iterable)：要训练的参数，一般传入的是model.parameters()
-    # lr(float)：learning rate学习率，也就是步长，默认：1e-3
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    # lr(float)：learning rate学习率，也就是步长，默认：1e-3(高了可能过拟合)
+    lr = 0.0001
+    optimizer = optim.Adam(net.parameters(), lr=lr)
 
     # 迭代次数（训练次数）
-    epochs = 30
+    epochs = 40
     # 用于判断最佳模型
     best_acc = 0.0
     # 最佳模型的保存地址
     save_path = 'googleNet.pth'
     train_steps = len(train_loader)
+
+    # 创建Excel表存储每轮的loss和准确度
+    if os.path.exists('训练过程.xlsx'):
+        workbook = openpyxl.load_workbook(r'训练过程.xlsx')
+    else:
+        workbook = openpyxl.Workbook()
+    sheet_title = "epoch{} learning rate{}".format(epochs, lr)
+    sheet = workbook.create_sheet(sheet_title, 1)
+    sheet['A1'] = 'epoch'
+    sheet['B1'] = 'loss'
+    sheet['C1'] = 'accuracy'
+
     for epoch in range(epochs):
         # 训练
         net.train()
@@ -189,9 +205,35 @@ def main():
         if val_accurate > best_acc:
             best_acc = val_accurate
             # torch.save(state, dir)保存模型等的相关参数，dir表示保存的文件路径+保存文件名
-            # model.state_dict()：返回的是一个OrderedDict，窜出了网络结构的名字和对应的参数
+            # model.state_dict()：返回的是一个OrderedDict，传出了网络结构的名字和对应的参数
             torch.save(net.state_dict(), save_path)
 
+        # 将每轮的结果保存到Excel里
+        sheet.cell(row=epoch + 2, column=1).value = epoch + 1
+        sheet.cell(row=epoch + 2, column=2).value = running_loss / train_steps
+        sheet.cell(row=epoch + 2, column=3).value = val_accurate
+
+    # category = Reference(sheet,
+    #                      min_col=1,
+    #                      max_col=1,
+    #                      min_row=2,
+    #                      max_row=epochs + 1)
+    # value1 = Reference(sheet,
+    #                    min_col=2,
+    #                    max_col=2,
+    #                    min_row=2,
+    #                    max_row=epochs + 1)
+    # value2 = Reference(sheet,
+    #                    min_col=3,
+    #                    max_col=3,
+    #                    min_row=2,
+    #                    max_row=epochs + 1)
+    # chart = LineChart()
+    # chart.add_data(value1)
+    # chart.add_data(value2)
+    # chart.set_categories(category)
+    # chart.title('步长{}'.format(lr))
+    workbook.save(r'训练过程.xlsx')
     print('Finished Training')
 
 

@@ -13,18 +13,32 @@ class GoogLeNet(nn.Module):
         super(GoogLeNet, self).__init__()
         self.aux_logits = aux_logits
 
+        # 第一个模块，使用一个卷积层
+        # 使用64个通道、7 x 7卷积层
         self.conv1 = BasicConv2d(3, 64, kernel_size=7, stride=2, padding=3)
         # ceil_mode=True时，将不够池化的数据自动补足NAN至kernel_size大小
         self.maxpool1 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
+        # 第二个模块，使用两个卷积层
+        # 第一个卷积层使用64个通道、1 x 1卷积层
+        # 第二个卷积层使用192个通道、3 x 3卷积层
         self.conv2 = BasicConv2d(64, 64, kernel_size=1)
         self.conv3 = BasicConv2d(64, 192, kernel_size=3, padding=1)
         self.maxpool2 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
+        # 第三个模块，串联两个完整的Inception块
+        # 第一个Inception块的输出通道数为64+128+32+32=256
+        # 第二个Inception块的输出通道数为128+192+96+64=480
         self.inception3a = Inception(192, 64, 96, 128, 16, 32, 32)
         self.inception3b = Inception(256, 128, 128, 192, 32, 96, 64)
         self.maxpool3 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
+        # 第四个模块，串联五个Inception块通道数分别为：
+        # 第一个192+208+48+64=512
+        # 第二个160+224+64+64=512
+        # 第三个128+256+64+64=512
+        # 第四个112+288+64+64=528
+        # 第五个256+320+128+128=832
         self.inception4a = Inception(480, 192, 96, 208, 16, 48, 64)
         self.inception4b = Inception(512, 160, 112, 224, 24, 64, 64)
         self.inception4c = Inception(512, 128, 128, 256, 24, 64, 64)
@@ -32,6 +46,9 @@ class GoogLeNet(nn.Module):
         self.inception4e = Inception(528, 256, 160, 320, 32, 128, 128)
         self.maxpool4 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
+        # 第五个模块包含两个Inception块，通道数分别为：
+        # 第一个256+320+128+128=832
+        # 第二个384+384+128+128=1024
         self.inception5a = Inception(832, 256, 160, 320, 32, 128, 128)
         self.inception5b = Inception(832, 384, 192, 384, 48, 128, 128)
 
