@@ -3,13 +3,12 @@ import json
 import torch
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image
+from PIL import Image, ImageTk
 from torchvision import transforms
-import matplotlib.pyplot as plt
 from model import GoogLeNet
 
 
-def predict(img_path):
+def predict(img_path, root):
     # 如果有NVIDA显卡，转到GPU训练，否则用CPU
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -20,12 +19,16 @@ def predict(img_path):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
+    # root = tk.Toplevel()
+    root.title("水果卡路里识别")
+    # root.geometry('400x400')
     # 确定图片存在，否则反馈错误
     assert os.path.exists(img_path), "file: '{}' does not exist.".format(
         img_path)
     img = Image.open(img_path)
-    # imshow()：对图像进行处理并显示其格式，show()则是将imshow()处理后的函数显示出来
-    plt.imshow(img)
+    photo = ImageTk.PhotoImage(img.resize((400, 400)))
+    tk.Label(root, image=photo).pack()
+
     # [C, H, W]，转换图像格式
     img = data_transform(img)
     # [N, C, H, W]，增加一个维度N
@@ -39,6 +42,15 @@ def predict(img_path):
     # 读取内容
     with open(json_path, "r") as f:
         class_indict = json.load(f)
+
+    # 获取对应水果营养素信息
+    nutrition_path = './fruit_nutrition.json'
+    # 确定路径存在，否则反馈错误
+    assert os.path.exists(json_path), "file: '{}' does not exist.".format(
+        nutrition_path)
+    # 读取内容
+    with open(nutrition_path, "r") as f:
+        class_nutrition = json.load(f)
 
     # 模型实例化，将模型转到device，结果类型有5种
     # 实例化模型时不需要辅助分类器
@@ -68,23 +80,31 @@ def predict(img_path):
     # 输出的预测值和真实值
     print_res = "class: {}  prob: {:.3}".format(class_indict[str(predict_cla)],
                                                 predict[predict_cla].numpy())
+    text = """热量(kcal/100g):{},
+    碳水化合物(g/100g):{},
+    脂肪(g/100g):{},
+    蛋白质(g/100g):{},
+    纤维素(g/100g):{}""".format(
+        class_nutrition[class_indict[str(predict_cla)]][0],
+        class_nutrition[class_indict[str(predict_cla)]][1],
+        class_nutrition[class_indict[str(predict_cla)]][2],
+        class_nutrition[class_indict[str(predict_cla)]][3],
+        class_nutrition[class_indict[str(predict_cla)]][4])
 
-    # 图片标题
-    plt.title(print_res)
-    for i in range(len(predict)):
-        print("class: {:10}  prob: {:.3}".format(class_indict[str(i)],
-                                                 predict[i].numpy()))
-    plt.show()
+    tk.Label(root, text=print_res).pack()
+    tk.Label(root, text=text).pack()
+
+    root.mainloop()
 
 
 # 用自己的数据集进行分类测试
 def main():
     # 加载图片
     root = tk.Tk()
-    root.withdraw()
+    # root.withdraw()
     img_path = filedialog.askopenfilename()
 
-    predict(img_path)
+    predict(img_path, root)
 
 
 if __name__ == '__main__':
