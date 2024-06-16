@@ -11,7 +11,7 @@ import torch.optim as optim
 from tqdm import tqdm
 from model import GoogLeNet
 import openpyxl
-from openpyxl.chart import LineChart, Reference
+# from openpyxl.chart import LineChart, Reference
 
 
 # 加载数据集并训练，计算loss和accuracy，保存训练好的网络参数
@@ -122,11 +122,11 @@ def main():
     # 定义adam优化器
     # params(iterable)：要训练的参数，一般传入的是model.parameters()
     # lr(float)：learning rate学习率，也就是步长，默认：1e-3(高了可能过拟合)
-    lr = 0.0001
+    lr = 0.0003
     optimizer = optim.Adam(net.parameters(), lr=lr)
 
     # 迭代次数（训练次数）
-    epochs = 40
+    epochs = 50
     # 用于判断最佳模型
     best_acc = 0.0
     # 最佳模型的保存地址
